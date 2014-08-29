@@ -15,6 +15,7 @@ use Zend\Stdlib\ArrayObject;
  * @property string $lastName
  * @property string $email
  * @property string $imageUrl
+ * @property string $profileUrl
  * 
  */
 class UserProfile extends ArrayObject {
