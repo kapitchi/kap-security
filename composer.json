@@ -1,0 +1,22 @@
+{
+    "name": "kapitchi/kap-security",
+    "description": "ZF2 Apigility module for user authentication and authorization",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "zf2",
+        "apigility",
+        "authentication",
+        "authorization"
+    ],
+    "require": {
+        "zfcampus/zf-apigility": "~1.0"
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "psr-0": {
+            "KapSecurity": "src/"
+        }
+    }
+}
