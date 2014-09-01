@@ -19,8 +19,6 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class AdapterManager extends AbstractPluginManager implements FactoryInterface {
     
-    protected $mvcEvent;
-    
     /**
      * Create service
      *
@@ -48,7 +46,7 @@ class AdapterManager extends AbstractPluginManager implements FactoryInterface {
      */
     public function validatePlugin($plugin)
     {
-        if($plugin instanceof AdapterInterface && $plugin->getId() != null) {
+        if($plugin instanceof AdapterInterface) {
             return;
         }
 
@@ -62,28 +60,13 @@ class AdapterManager extends AbstractPluginManager implements FactoryInterface {
     public function get($name, $options = array(), $usePeeringServiceManagers = true)
     {
         $ins = parent::get($name, $options, $usePeeringServiceManagers);
-        
-        if(method_exists($ins, 'setMvcEvent')) {
-            $ins->setMvcEvent($this->getMvcEvent());
-        }
-        
+
+        //$ins->setId($this->canonicalizeName($name));
+
+//        if(method_exists($ins, 'setMvcEvent')) {
+//            $ins->setMvcEvent($this->getMvcEvent());
+//        }
+
         return $ins;
     }
-
-    /**
-     * @param MvcEvent $mvcEvent
-     */
-    public function setMvcEvent(MvcEvent $mvcEvent)
-    {
-        $this->mvcEvent = $mvcEvent;
-    }
-
-    /**
-     * @return MvcEvent
-     */
-    public function getMvcEvent()
-    {
-        return $this->mvcEvent;
-    }
-    
 } 

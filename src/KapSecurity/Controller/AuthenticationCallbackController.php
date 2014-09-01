@@ -25,12 +25,8 @@ class AuthenticationCallbackController extends AbstractActionController
     {
         $event = $this->getEvent();
         
-        $type = $this->params()->fromQuery('type');
-
-        $this->adapterManager->setMvcEvent($this->getEvent());
-        $adapter = $this->adapterManager->get($type);
-
-        $result = $this->authenticationService->authenticate($adapter);
+        $id = $this->params()->fromRoute('authentication_service_id');
+        $result = $this->authenticationService->authenticateById($id, $event);
         
         return [
             'result' => $result

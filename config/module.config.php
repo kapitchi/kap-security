@@ -5,7 +5,7 @@ return array(
             'kap-security.authentication-callback' => array(
                 'type' => 'Segment',
                 'options' => array(
-                    'route' => '/authentication_callback',
+                    'route' => '/authentication_callback/:authentication_service_id',
                     'defaults' => array(
                         'controller' => 'KapSecurity\\Controller\\AuthenticationCallbackController',
                         'action' => 'authenticationCallback',

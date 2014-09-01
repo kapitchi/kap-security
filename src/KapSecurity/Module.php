@@ -43,17 +43,35 @@ class Module implements ApigilityProviderInterface
         $halEntity = $e->getParam('entity');
         $entity = $halEntity->entity;
 
-        if (! $entity instanceof AuthenticationServiceEntity) {
-            return;
-        }
+        /**
+         * [
+        'name' => 'kap-security.authentication-callback',
+        'params' => [
+        'authentication_service_id' => $entity['id']
+        ]
+        ]
+         */
         
-        $adapters = $this->sm->get('KapSecurity\Authentication\Adapter\AdapterManager');
-        $adapter = $adapters->get($entity['system_adapter_service']);
-
-        $halEntity->getLinks()->add(\ZF\Hal\Link\Link::factory(array(
-            'rel' => 'redirect_url',
-            'url' => $adapter->getRedirectUri()
-        )));
+        if ($entity instanceof AuthenticationServiceEntity) {
+            $adapters = $this->sm->get('KapSecurity\Authentication\Adapter\AdapterManager');
+            $adapter = $adapters->get($entity['system_adapter_service']);
+            
+            $helpers = $this->sm->get('ViewHelperManager');
+            $serverUrl = $helpers->get('ServerUrl');
+            $urlHelper = $helpers->get('Url');
+            
+            $url = $adapter->getRedirectUri();
+            
+            $callbackUrl = $serverUrl($urlHelper('kap-security.authentication-callback', [
+                'authentication_service_id' => $entity['id']
+            ]));
+            $url = str_replace('AUTH_CALLBACK', urlencode($callbackUrl), $url);
+            
+            $halEntity->getLinks()->add(\ZF\Hal\Link\Link::factory(array(
+                'rel' => 'redirect_url',
+                'url' => $url,
+            )));
+        }
     }
     
     public function onAuthenticationPost(MvcAuthEvent $e)
@@ -87,7 +105,9 @@ class Module implements ApigilityProviderInterface
                         return new AuthenticationService(
                             new Options($options),
                             $sm->get('KapSecurity\\IdentityAuthenticationRepository'),
-                            $sm->get('KapSecurity\\IdentityRepository')
+                            $sm->get('KapSecurity\\IdentityRepository'),
+                            $sm->get('KapSecurity\\AuthenticationServiceRepository'),
+                            $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
                         );
                     },
                 'KapSecurity\\IdentityRepository' => function($sm) {

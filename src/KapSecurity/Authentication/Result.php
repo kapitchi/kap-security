@@ -18,10 +18,37 @@ class Result extends \Zend\Authentication\Result {
 
     protected $userProfile;
     protected $identityId;
+    protected $authenticationService;
+
+    public function __construct($authenticationService, $code, $identity, array $messages = array())
+    {
+        parent::__construct($code, $identity, $messages);
+        $this->setAuthenticationService($authenticationService);
+    }
+    
+    public function setCode($code)
+    {
+        $this->code = $code;
+    }
 
     /**
-     * @param int $identityId
+     * @param string $authenticationService
+     * 
+     * Example: LOCAL, FACEBOOK, ...
      */
+    public function setAuthenticationService($authenticationService)
+    {
+        $this->authenticationService = $authenticationService;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAuthenticationService()
+    {
+        return $this->authenticationService;
+    }
+
     public function setIdentityId($identityId)
     {
         $this->identityId = $identityId;

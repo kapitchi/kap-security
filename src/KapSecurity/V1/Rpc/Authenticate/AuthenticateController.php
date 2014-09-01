@@ -28,14 +28,13 @@ class AuthenticateController extends AbstractActionController
     {
         $event = $this->getEvent();
         
-        $inputFilter = $event->getParam('ZF\ContentValidation\InputFilter');
-        $type = $inputFilter->getValue('type');
-
-        $this->adapterManager->setMvcEvent($this->getEvent());
+        //$type = $this->bodyParams();
+        
+        $type = 'facebook_javascript';
+        
         $adapter = $this->adapterManager->get($type);
-
+        
         $result = $this->authenticationService->authenticate($adapter);
-
         return $this->createResponse($result);
     }
 
@@ -43,7 +42,9 @@ class AuthenticateController extends AbstractActionController
     {
         return [
             'code' => $result->getCode(),
-            'is_valid' => $result->isValid(),
+            'identityId' => $result->getIdentityId(),
+            'userProfile' => $result->getUserProfile() ? $result->getUserProfile()->getArrayCopy() : null,
+            'isValid' => $result->isValid(),
             'identity' => $result->getIdentity(),
             'messages' => $result->getMessages()
         ];

@@ -3,10 +3,12 @@
 namespace KapSecurity\Authentication;
 
 use KapSecurity\Authentication\Adapter\AdapterInterface;
+use KapSecurity\AuthenticationServiceRepository;
 use KapSecurity\IdentityAuthenticationRepository;
 use KapSecurity\IdentityRepository;
 use KapSecurity\V1\Rest\IdentityAuthentication\IdentityAuthenticationResource;
 use Zend\Authentication\Exception;
+use Zend\Mvc\MvcEvent;
 use ZF\Rest\AbstractResourceListener;
 
 class AuthenticationService extends \Zend\Authentication\AuthenticationService {
@@ -14,8 +16,10 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
     protected $options;
     protected $identityAuthenticationRepository;
     protected $identityRepository;
+    protected $authenticationServiceRepository;
     
-    public function __construct(Options $options, IdentityAuthenticationRepository $identityAuthenticationRepository, IdentityRepository $identityRepository)
+    public function __construct(Options $options, IdentityAuthenticationRepository $identityAuthenticationRepository,
+                                IdentityRepository $identityRepository)
     {
         $this->options = $options;
         $this->identityAuthenticationRepository = $identityAuthenticationRepository;
@@ -40,23 +44,21 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
         }
 
         if($result->isValid()) {
-            $serviceId = $adapter->getId();
+            $serviceId = $result->getAuthenticationService();
             $identity = $result->getIdentity();
 
             $data = array(
-                'service_id' => $serviceId,
+                'authentication_service' => $serviceId,
                 'identity' => $identity
             );
 
-            $res = $this->identityAuthenticationRepository->getPaginatorAdapter($data)->getItems(0, 1);
-            $authEntity = $res->current();
+            $authEntity = $this->identityAuthenticationRepository->getPaginatorAdapter($data)->getItems(0, 1)->current();
 
             $identityEntity = null;
             if(!$authEntity) {
                 if(!$this->options->getAllowRegistration()) {
-                    $failed = new Result(Result::FAILURE_REGISTRATION_DISABLED, $identity);
-                    //$failed->setUserProfile($result->getUserProfile());
-                    return $failed;
+                    $result->setCode(Result::FAILURE_REGISTRATION_DISABLED);
+                    return $result;
                 }
 
                 $enable = $this->options->getEnableOnRegistration();
@@ -70,6 +72,7 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
                 $profile = $result->getUserProfile();
                 if($profile) {
                     $idData['display_name'] = $profile['displayName'];
+                    $data['user_profile_json'] = json_encode((array)$profile);
                 }
                 
                 $identityEntity = $this->identityRepository->create($idData);
@@ -83,8 +86,8 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
             }
             
             if(!$identityEntity['authentication_enabled']) {
-                $failed = new Result(Result::FAILURE_IDENTITY_DISABLED, $identity);
-                return $failed;
+                $result->setCode(Result::FAILURE_IDENTITY_DISABLED);
+                return $result;
             }
             
             $result->setIdentityId($authEntity['owner_id']);
@@ -94,5 +97,5 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
         
         return $result;
     }
-
+    
 } 
