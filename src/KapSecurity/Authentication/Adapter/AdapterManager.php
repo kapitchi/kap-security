@@ -28,8 +28,13 @@ class AdapterManager extends AbstractPluginManager implements FactoryInterface {
     public function createService(ServiceLocatorInterface $serviceLocator)
     {
         $config = $serviceLocator->get('Config');
-        $managerConfig = $config['authentication_adapter_manager'];
-        $ins = new self(new Config($managerConfig['adapters']));
+        
+        $managerConfig = [];
+        if(!empty($config['authentication_adapter_manager']) && !empty($config['authentication_adapter_manager']['adapters'])) {
+            $managerConfig = $config['authentication_adapter_manager']['adapters'];
+        }
+        
+        $ins = new self(new Config($managerConfig));
         $ins->setServiceLocator($serviceLocator);
         return $ins;
     }
