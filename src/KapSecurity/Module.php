@@ -87,8 +87,34 @@ class Module implements ApigilityProviderInterface
             $identity = new AuthenticatedIdentity($identityId);
             $identity->setName('user');
             
-            $e->setIdentity($identity);
+            //XXX TODO disabled for now
+            //$e->setIdentity($identity);
         }
+        
+    }
+    
+    public function getControllerConfig()
+    {
+        return [
+            'aliases' => [
+                'ZF\OAuth2\Controller\Auth' => 'KapSecurity\Controller\OAuthController'
+            ],
+            'factories' => [
+                'KapSecurity\\Controller\\AuthenticationController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
+                        $sm = $cm->getServiceLocator();
+                        $ins = new Controller\AuthenticationController(
+                            $sm->get('KapSecurity\Authentication\AuthenticationService')
+                        );
+                        return $ins;
+                    },
+                'KapSecurity\Controller\OAuthController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
+                        $sm = $cm->getServiceLocator();
+                        $server = $sm->get('ZF\OAuth2\Service\OAuth2Server');
+                        $ins = new Controller\OAuthController($server);
+                        return $ins;
+                    }
+            ]
+        ];
     }
 
     public function getServiceConfig()

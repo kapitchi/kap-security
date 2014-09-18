@@ -1,7 +1,22 @@
 <?php
 return array(
+    'view_manager' => array(
+        'template_path_stack' => array(
+            __DIR__ . '/../view',
+        ),
+    ),
     'router' => array(
         'routes' => array(
+            'kap-security.login' => [
+                'type' => 'Segment',
+                'options' => array(
+                    'route' => '/security/login',
+                    'defaults' => array(
+                        'controller' => 'KapSecurity\\Controller\\AuthenticationController',
+                        'action' => 'login',
+                    ),
+                ),
+            ],
             'kap-security.authentication-callback' => array(
                 'type' => 'Segment',
                 'options' => array(
