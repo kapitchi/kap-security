@@ -10,7 +10,7 @@ return array(
             'kap-security.login' => [
                 'type' => 'Segment',
                 'options' => array(
-                    'route' => '/security/login',
+                    'route' => '/login',
                     'defaults' => array(
                         'controller' => 'KapSecurity\\Controller\\AuthenticationController',
                         'action' => 'login',

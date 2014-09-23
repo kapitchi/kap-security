@@ -7,22 +7,12 @@
  */ 
 
 return [
-    'authentication_adapter_manager' => array(
-        'adapters' => [
-            'factories' => array(
-                'facebook' => function($sm) {
-                        $ser = $sm->getServiceLocator()->get('authenticationFacebookAdapter');
-                        $ins = new KapSecurity\Authentication\Adapter\OAuth2(1, $ser);
-                        return $ins;
-                    }
-            ),
-        ]
-    ),
     'authentication_options' => [
         'allow_registration' => true,
         'enable_on_registration' => true
     ],
     'zf-oauth2' => array(
         'allow_implicit' => true,
+        'storage' => 'KapSecurity\\OAuth2\PdoAdapter'
     ),
 ];

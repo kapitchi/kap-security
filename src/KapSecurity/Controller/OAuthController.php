@@ -50,6 +50,7 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         }
 
         $oauth2request = $this->getOAuth2Request();
+        
         $response = $this->server->handleTokenRequest($oauth2request);
         if ($response->isClientError()) {
             $parameters = $response->getParameters();

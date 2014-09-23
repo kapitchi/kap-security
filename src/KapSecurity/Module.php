@@ -2,7 +2,6 @@
 namespace KapSecurity;
 
 use KapApigility\DbEntityRepository;
-use KapSecurity\Authentication\Adapter\OAuth2;
 use KapSecurity\Authentication\Adapter\CallbackAdapterInterface;
 use KapSecurity\Authentication\AuthenticationService;
 use KapSecurity\Authentication\Options;
@@ -100,13 +99,7 @@ class Module implements ApigilityProviderInterface
                 'ZF\OAuth2\Controller\Auth' => 'KapSecurity\Controller\OAuthController'
             ],
             'factories' => [
-                'KapSecurity\\Controller\\AuthenticationController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
-                        $sm = $cm->getServiceLocator();
-                        $ins = new Controller\AuthenticationController(
-                            $sm->get('KapSecurity\Authentication\AuthenticationService')
-                        );
-                        return $ins;
-                    },
+                'KapSecurity\\Controller\\AuthenticationController' => 'KapSecurity\\Controller\\AuthenticationControllerFactory',
                 'KapSecurity\Controller\OAuthController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
                         $sm = $cm->getServiceLocator();
                         $server = $sm->get('ZF\OAuth2\Service\OAuth2Server');
@@ -121,9 +114,36 @@ class Module implements ApigilityProviderInterface
     {
         return [
             'aliases' => [
-                'Zend\Authentication\AuthenticationService' => 'KapSecurity\Authentication\AuthenticationService'
+                'Zend\Authentication\AuthenticationService' => 'KapSecurity\Authentication\AuthenticationService',
+                //'ZF\OAuth2\Adapter\PdoAdapter' => 'KapSecurity\OAuth2\PdoAdapter'
             ],
             'factories' => [
+                //'KapSecurity\OAuth2\PdoAdapter' => 'KapSecurity\OAuth2\PdoAdapter',
+                'KapSecurity\OAuth2\PdoAdapter' => function($services) {
+                        $config = $services->get('Config');
+
+                        if (!isset($config['zf-oauth2']['db']) || empty($config['zf-oauth2']['db'])) {
+                            throw new Exception\RuntimeException(
+                                'The database configuration [\'zf-oauth2\'][\'db\'] for OAuth2 is missing'
+                            );
+                        }
+
+                        $username = isset($config['zf-oauth2']['db']['username']) ? $config['zf-oauth2']['db']['username'] : null;
+                        $password = isset($config['zf-oauth2']['db']['password']) ? $config['zf-oauth2']['db']['password'] : null;
+                        $options  = isset($config['zf-oauth2']['db']['options']) ? $config['zf-oauth2']['db']['options'] : array();
+
+                        $oauth2ServerConfig = array();
+                        if (isset($config['zf-oauth2']['storage_settings']) && is_array($config['zf-oauth2']['storage_settings'])) {
+                            $oauth2ServerConfig = $config['zf-oauth2']['storage_settings'];
+                        }
+
+                        return new OAuth2\PdoAdapter(array(
+                            'dsn'      => $config['zf-oauth2']['db']['dsn'],
+                            'username' => $username,
+                            'password' => $password,
+                            'options'  => $options,
+                        ), $oauth2ServerConfig);
+                    },
                 'KapSecurity\Authentication\Adapter\AdapterManager' => 'KapSecurity\Authentication\Adapter\AdapterManager',
                 'KapSecurity\Authentication\AuthenticationService' => function($sm) {
                         $config = $sm->get('Config');
