@@ -8,6 +8,7 @@ class AuthenticationControllerFactory
         $sm = $controllers->getServiceLocator();
         $ins = new AuthenticationController(
             $sm->get('KapSecurity\Authentication\AuthenticationService')
+            $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
         );
         return $ins;
     }

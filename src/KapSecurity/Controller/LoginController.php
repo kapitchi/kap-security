@@ -25,7 +25,7 @@ class AuthenticationController extends AbstractActionController
     {
         $event = $this->getEvent();
         
-        $id = $this->params()->fromRoute('authentication_service_id');
+        $id = $this->params()->fromRoute('adapter');
         $result = $this->authenticationService->authenticateById($id, $event);
         
         return [
