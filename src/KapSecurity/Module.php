@@ -99,7 +99,7 @@ class Module implements ApigilityProviderInterface
                 'ZF\OAuth2\Controller\Auth' => 'KapSecurity\Controller\OAuthController'
             ],
             'factories' => [
-                'KapSecurity\\Controller\\AuthenticationController' => 'KapSecurity\\Controller\\AuthenticationControllerFactory',
+                'KapSecurity\\Controller\\LoginController' => 'KapSecurity\\Controller\\LoginControllerFactory',
                 'KapSecurity\Controller\OAuthController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
                         $sm = $cm->getServiceLocator();
                         $server = $sm->get('ZF\OAuth2\Service\OAuth2Server');

@@ -12,7 +12,7 @@ return array(
                 'options' => array(
                     'route' => '/login',
                     'defaults' => array(
-                        'controller' => 'KapSecurity\\Controller\\AuthenticationController',
+                        'controller' => 'KapSecurity\\Controller\\LoginController',
                         'action' => 'login',
                     ),
                 ),

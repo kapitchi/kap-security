@@ -115,6 +115,8 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         
         $identityId = $authService->getIdentity();
         
+        //echo __FILE__ . ' Line: ' . __LINE__; var_dump($identityId); exit; //XXX
+        
         /**
         $authorized = $request->request('authorized', false);
         if (empty($authorized)) {
@@ -137,6 +139,14 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
     {
         $view = $this->getServiceLocator()->get('ViewHelperManager');
         $serverHelper = $view->get('ServerUrl');
+        
+        if($this->params()->fromQuery('authenticate')) {
+            echo __FILE__ . ' Line: ' . __LINE__; var_dump('DO authe'); exit; //XXX
+        }
+        
+        //773430982669649
+        //https://www.facebook.com/dialog/oauth?client_id={app-id}&redirect_uri={redirect-uri}
+        return $this->redirect()->toUrl('https://www.facebook.com/dialog/oauth?client_id=773430982669649&redirect_uri=http%3A%2F%2Flocalhost%3A9002%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dtestclient%26redirect_uri%3D%2Foauth%2Freceivecode%26state%3Dxyz%26authenticate%3D1');
 
         $view = new ViewModel([
             'callbackUrl' => $serverHelper(true)

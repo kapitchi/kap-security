@@ -3,7 +3,7 @@ namespace KapSecurity\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 
-class AuthenticationController extends AbstractActionController
+class LoginController extends AbstractActionController
 {
     /**
      * @var AuthenticationServiceInterface
@@ -23,13 +23,13 @@ class AuthenticationController extends AbstractActionController
     
     public function loginAction()
     {
-        $event = $this->getEvent();
+        //$event = $this->getEvent();
         
-        $id = $this->params()->fromRoute('adapter');
-        $result = $this->authenticationService->authenticateById($id, $event);
+        //$id = $this->params()->fromRoute('adapter');
+        //$result = $this->authenticationService->authenticateById($id, $event);
         
         return [
-            'result' => $result
+            'callbackUrl' => $this->params()->fromQuery('callback_url')
         ];
     }
 }

@@ -1,13 +1,13 @@
 <?php
 namespace KapSecurity\Controller;
 
-class AuthenticationControllerFactory
+class LoginControllerFactory
 {
     public function __invoke($controllers)
     {
         $sm = $controllers->getServiceLocator();
-        $ins = new AuthenticationController(
-            $sm->get('KapSecurity\Authentication\AuthenticationService')
+        $ins = new LoginController(
+            $sm->get('KapSecurity\Authentication\AuthenticationService'),
             $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
         );
         return $ins;
