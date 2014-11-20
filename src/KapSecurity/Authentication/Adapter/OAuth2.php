@@ -9,27 +9,20 @@ use League\OAuth2\Client\Entity\User;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use Zend\Mvc\MvcEvent;
 
-class OAuth2 implements AdapterInterface, CallbackAdapterInterface {
-    protected $id;
-    protected $code;
+class OAuth2 implements AdapterInterface, RedirectionAdapterInterface {
+    protected $authenticationService;
     protected $mvcEvent;
     /**
      * @var \League\OAuth2\Client\Provider\AbstractProvider
      */
     protected $service;
-    protected $callbackUri;
     
-    public function __construct($id, AbstractProvider $service)
+    public function __construct($authenticationService, AbstractProvider $service)
     {
-        $this->id = $id;
+        $this->authenticationService = $authenticationService;
         $this->service = $service;
     }
     
-    public function getId()
-    {
-        return $this->id;
-    }
-
     /**
      * Performs an authentication attempt
      *
@@ -41,6 +34,7 @@ class OAuth2 implements AdapterInterface, CallbackAdapterInterface {
         $code = $this->getMvcEvent()->getRequest()->getQuery('code');
         if(!$code) {
             return new Result(
+                $this->authenticationService,
                 Result::FAILURE_CREDENTIAL_INVALID,
                 array(),
                 array("No 'code' available")
@@ -50,9 +44,11 @@ class OAuth2 implements AdapterInterface, CallbackAdapterInterface {
         try {
             $service = $this->getService();
             $token = $service->getAccessToken('authorization_code', ['code' => $code]);
+            
             $userProfile = $service->getUserDetails($token);
             
             $res = new OAuth2Result(
+                $this->authenticationService,
                 Result::SUCCESS,
                 $userProfile->uid
             );
@@ -66,6 +62,7 @@ class OAuth2 implements AdapterInterface, CallbackAdapterInterface {
             
         } catch(\Exception $e) {
             return new Result(
+                $this->authenticationService,
                 Result::FAILURE_CREDENTIAL_INVALID,
                 $code,
                 array($e->getMessage())
@@ -95,15 +92,17 @@ class OAuth2 implements AdapterInterface, CallbackAdapterInterface {
         return $profile;
     }
 
-    public function getRedirectUri()
+    public function getAuthenticationUrl($state)
     {
-        return (string)$this->getService()->getAuthorizationUrl();
+        return (string)$this->getService()->getAuthorizationUrl([
+            'state' => $state
+        ]);
     }
     
     /**
      * @param string $callbackUri
      */
-    public function setCallbackUri($callbackUri)
+    public function setCallbackUrl($callbackUri)
     {
         $this->getService()->redirectUri = $callbackUri;
     }

@@ -2,47 +2,28 @@
 return array(
     'view_manager' => array(
         'template_path_stack' => array(
-            __DIR__ . '/../view',
+            0 => __DIR__ . '/../view',
         ),
     ),
     'router' => array(
         'routes' => array(
-            'kap-security.login' => [
+            'kap-security.oauth-callback' => array(
+                'type' => 'Segment',
+                'options' => array(
+                    'route' => '/oauth/callback',
+                    'defaults' => array(
+                        'controller' => 'KapSecurity\\Controller\\OAuthController',
+                        'action' => 'callback',
+                    ),
+                ),
+            ),
+            'kap-security.login' => array(
                 'type' => 'Segment',
                 'options' => array(
                     'route' => '/login',
                     'defaults' => array(
                         'controller' => 'KapSecurity\\Controller\\LoginController',
                         'action' => 'login',
-                    ),
-                ),
-            ],
-            'kap-security.authentication-callback' => array(
-                'type' => 'Segment',
-                'options' => array(
-                    'route' => '/authentication_callback/:authentication_service_id',
-                    'defaults' => array(
-                        'controller' => 'KapSecurity\\Controller\\AuthenticationCallbackController',
-                        'action' => 'authenticationCallback',
-                    ),
-                ),
-            ),
-            'kap-security.rest.authentication-service' => array(
-                'type' => 'Segment',
-                'options' => array(
-                    'route' => '/authentication_service[/:authentication_service_id]',
-                    'defaults' => array(
-                        'controller' => 'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller',
-                    ),
-                ),
-            ),
-            'kap-security.rpc.authenticate' => array(
-                'type' => 'Segment',
-                'options' => array(
-                    'route' => '/authenticate',
-                    'defaults' => array(
-                        'controller' => 'KapSecurity\\V1\\Rpc\\Authenticate\\Controller',
-                        'action' => 'authenticate',
                     ),
                 ),
             ),
@@ -78,37 +59,12 @@ return array(
     ),
     'zf-versioning' => array(
         'uri' => array(
-            0 => 'kap-security.rest.authentication-service',
-            1 => 'kap-security.rpc.authenticate',
-            2 => 'kap-security.rpc.authentication-callback',
             3 => 'kap-security.rest.identity-authentication',
             4 => 'kap-security.rest.identity',
             5 => 'kap-security.rpc.logout',
         ),
     ),
     'zf-rest' => array(
-        'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller' => array(
-            'listener' => 'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceResource',
-            'route_name' => 'kap-security.rest.authentication-service',
-            'route_identifier_name' => 'authentication_service_id',
-            'collection_name' => 'authentication_service',
-            'entity_http_methods' => array(
-                0 => 'GET',
-                1 => 'PATCH',
-                2 => 'PUT',
-                3 => 'DELETE',
-            ),
-            'collection_http_methods' => array(
-                0 => 'GET',
-                1 => 'POST',
-            ),
-            'collection_query_whitelist' => array(),
-            'page_size' => 25,
-            'page_size_param' => null,
-            'entity_class' => 'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceEntity',
-            'collection_class' => 'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceCollection',
-            'service_name' => 'AuthenticationService',
-        ),
         'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
             'listener' => 'KapSecurity\\V1\\Rest\\IdentityAuthentication\\IdentityAuthenticationResource',
             'route_name' => 'kap-security.rest.identity-authentication',
@@ -156,29 +112,11 @@ return array(
     ),
     'zf-content-negotiation' => array(
         'controllers' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller' => 'HalJson',
-            'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => 'Json',
-            'KapSecurity\\V1\\Rpc\\AuthenticationCallback\\Controller' => 'Json',
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => 'HalJson',
             'KapSecurity\\V1\\Rest\\Identity\\Controller' => 'HalJson',
             'KapSecurity\\V1\\Rpc\\Logout\\Controller' => 'Json',
         ),
         'accept_whitelist' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/hal+json',
-                2 => 'application/json',
-            ),
-            'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-                2 => 'application/*+json',
-            ),
-            'KapSecurity\\V1\\Rpc\\AuthenticationCallback\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-                2 => 'application/*+json',
-            ),
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
                 0 => 'application/vnd.kap-security.v1+json',
                 1 => 'application/hal+json',
@@ -196,18 +134,6 @@ return array(
             ),
         ),
         'content_type_whitelist' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-            ),
-            'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-            ),
-            'KapSecurity\\V1\\Rpc\\AuthenticationCallback\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-            ),
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
                 0 => 'application/vnd.kap-security.v1+json',
                 1 => 'application/json',
@@ -224,18 +150,6 @@ return array(
     ),
     'zf-hal' => array(
         'metadata_map' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceEntity' => array(
-                'entity_identifier_name' => 'id',
-                'route_name' => 'kap-security.rest.authentication-service',
-                'route_identifier_name' => 'authentication_service_id',
-                'hydrator' => 'Zend\\Stdlib\\Hydrator\\ArraySerializable',
-            ),
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceCollection' => array(
-                'entity_identifier_name' => 'id',
-                'route_name' => 'kap-security.rest.authentication-service',
-                'route_identifier_name' => 'authentication_service_id',
-                'is_collection' => true,
-            ),
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\IdentityAuthenticationEntity' => array(
                 'entity_identifier_name' => 'id',
                 'route_name' => 'kap-security.rest.identity-authentication',
@@ -264,13 +178,6 @@ return array(
     ),
     'zf-apigility' => array(
         'db-connected' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceResource' => array(
-                'adapter_name' => 'DefaultDbAdapter',
-                'table_name' => 'authentication_service',
-                'hydrator_name' => 'Zend\\Stdlib\\Hydrator\\ArraySerializable',
-                'controller_service_name' => 'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller',
-                'entity_identifier_name' => 'id',
-            ),
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\IdentityAuthenticationResource' => array(
                 'adapter_name' => 'DefaultDbAdapter',
                 'table_name' => 'identity_authentication',
@@ -289,19 +196,10 @@ return array(
     ),
     'controllers' => array(
         'factories' => array(
-            'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => 'KapSecurity\\V1\\Rpc\\Authenticate\\AuthenticateControllerFactory',
-            'KapSecurity\\Controller\\AuthenticationCallbackController' => 'KapSecurity\\Controller\\AuthenticationCallbackControllerFactory',
             'KapSecurity\\V1\\Rpc\\Logout\\Controller' => 'KapSecurity\\V1\\Rpc\\Logout\\LogoutControllerFactory',
         ),
     ),
     'zf-rpc' => array(
-        'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => array(
-            'service_name' => 'Authenticate',
-            'http_methods' => array(
-                0 => 'POST',
-            ),
-            'route_name' => 'kap-security.rpc.authenticate',
-        ),
         'KapSecurity\\V1\\Rpc\\Logout\\Controller' => array(
             'service_name' => 'logout',
             'http_methods' => array(
@@ -315,22 +213,6 @@ return array(
     ),
     'zf-mvc-auth' => array(
         'authorization' => array(
-            'KapSecurity\\V1\\Rest\\AuthenticationService\\Controller' => array(
-                'entity' => array(
-                    'GET' => false,
-                    'POST' => false,
-                    'PATCH' => true,
-                    'PUT' => true,
-                    'DELETE' => true,
-                ),
-                'collection' => array(
-                    'GET' => false,
-                    'POST' => true,
-                    'PATCH' => false,
-                    'PUT' => false,
-                    'DELETE' => false,
-                ),
-            ),
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
                 'entity' => array(
                     'GET' => true,
@@ -361,17 +243,6 @@ return array(
                     'PATCH' => false,
                     'PUT' => false,
                     'DELETE' => false,
-                ),
-            ),
-            'KapSecurity\\V1\\Rpc\\Authenticate\\Controller' => array(
-                'actions' => array(
-                    'authenticate' => array(
-                        'GET' => false,
-                        'POST' => false,
-                        'PATCH' => false,
-                        'PUT' => false,
-                        'DELETE' => false,
-                    ),
                 ),
             ),
         ),

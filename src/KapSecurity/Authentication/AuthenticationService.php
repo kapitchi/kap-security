@@ -16,7 +16,6 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
     protected $options;
     protected $identityAuthenticationRepository;
     protected $identityRepository;
-    protected $authenticationServiceRepository;
     
     public function __construct(Options $options, IdentityAuthenticationRepository $identityAuthenticationRepository,
                                 IdentityRepository $identityRepository)
@@ -43,7 +42,7 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
             $this->clearIdentity();
         }
 
-        if($result->isValid()) {
+        if($result->isValid() && $result instanceof Result) {
             $serviceId = $result->getAuthenticationService();
             $identity = $result->getIdentity();
 

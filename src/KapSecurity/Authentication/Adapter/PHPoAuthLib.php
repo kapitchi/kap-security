@@ -11,23 +11,15 @@ use OAuth\UserData\ExtractorFactory;
 use Zend\Mvc\MvcEvent;
 
 class PHPoAuthLib implements AdapterInterface, CallbackAdapterInterface {
-    protected $id;
-    protected $code;
-    protected $mvcEvent;
     protected $service;
+    protected $mvcEvent;
     protected $callbackUri;
     
-    public function __construct($id, ServiceInterface $service)
+    public function __construct(ServiceInterface $service)
     {
-        $this->id = $id;
         $this->service = $service;
     }
     
-    public function getId()
-    {
-        return $this->id;
-    }
-
     /**
      * Performs an authentication attempt
      *

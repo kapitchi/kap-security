@@ -6,6 +6,8 @@
 
 namespace KapSecurity\Controller;
 
+use KapSecurity\Authentication\Adapter\RedirectionAdapterInterface;
+use OAuth2\Encryption\Jwt;
 use OAuth2\Request as OAuth2Request;
 use OAuth2\Response as OAuth2Response;
 use OAuth2\Server as OAuth2Server;
@@ -21,6 +23,12 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
      * @var OAuth2Server
      */
     protected $server;
+
+    /**
+     * TODO this must go from config
+     * @var string 
+     */
+    protected $jwtKey = '12345';
 
     /**
      * Constructor
@@ -101,55 +109,131 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
     public function authorizeAction()
     {
         $request  = $this->getOAuth2Request();
+        return $this->authorize($request);
+    }
+
+    public function callbackAction()
+    {
+        $authService = $this->getServiceLocator()->get('KapSecurity\\Authentication\\AuthenticationService');
+
+        $state = $this->decodeJwt($this->params()->fromQuery('state'));
+        if(!$state) {
+            echo __FILE__ . ' Line: ' . __LINE__; var_dump('state === false'); exit; //XXX
+        }
+
+        //authenticate if requested
+        $service = $state['service'];
+        $requestParams = $state['requestParams'];
+
+        $adapterManager = $this->getServiceLocator()->get('KapSecurity/Authentication/Adapter/AdapterManager');
+        $adapter = $adapterManager->get($service);
+
+        if($adapter instanceof RedirectionAdapterInterface) {
+            $view = $this->getServiceLocator()->get('ViewHelperManager');
+            $serverHelper = $view->get('ServerUrl');
+    
+            $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
+            $adapter->setCallbackUrl($callbackUrl);
+        }
+
+        //TODO XXX
+        if(method_exists($adapter, 'setMvcEvent')) {
+            $adapter->setMvcEvent($this->getEvent());
+        }
+
+        $result = $authService->authenticate($adapter);
+        if(!$result->isValid()) {
+
+            echo __FILE__ . ' Line: ' . __LINE__; var_dump($result); exit; //XXX
+
+            $redirectUri = $requestParams['redirect_uri'];
+            if($redirectUri) {
+                $response->setRedirect(302, $redirectUri, $requestParams['state'], 'authentication_failed', "User didn't authenticate", null);
+            }
+            else {
+                $response->setError(400, 'authentication_failed', "User didn't authenticate");
+            }
+
+            return $this->handleResponse($response);
+        }
+
+        $request = $this->getOAuth2Request($state['requestParams']);
+        return $this->authorize($request);
+    }
+
+    protected function authorize(OAuth2Request $request)
+    {
         $response = new OAuth2Response();
+
+        $authService = $this->getServiceLocator()->get('KapSecurity\\Authentication\\AuthenticationService');
 
         // validate the authorize request
         if (!$this->server->validateAuthorizeRequest($request, $response)) {
             return $this->handleResponse($response);
         }
-        
-        $authService = $this->getServiceLocator()->get('KapSecurity\\Authentication\\AuthenticationService');
+
         if(!$authService->hasIdentity()) {
             return $this->handleNoIdentity();
         }
-        
+
         $identityId = $authService->getIdentity();
-        
-        //echo __FILE__ . ' Line: ' . __LINE__; var_dump($identityId); exit; //XXX
-        
+
+        //TODO request authorization from an user 
         /**
         $authorized = $request->request('authorized', false);
         if (empty($authorized)) {
-            $clientId = $request->query('client_id', false);
-            $view = new ViewModel(array('clientId' => $clientId));
-            $view->setTemplate('oauth/authorize');
-            return $view;
+        $clientId = $request->query('client_id', false);
+        $view = new ViewModel(array('clientId' => $clientId));
+        $view->setTemplate('oauth/authorize');
+        return $view;
         }
         $is_authorized = ($authorized === 'yes');
          */
-        
+
         $is_authorized = true;
 
         $this->server->handleAuthorizeRequest($request, $response, $is_authorized, $identityId);
-        
+
         return $this->handleResponse($response);
     }
-    
+
     protected function handleNoIdentity()
     {
         $view = $this->getServiceLocator()->get('ViewHelperManager');
         $serverHelper = $view->get('ServerUrl');
+
+        $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
         
-        if($this->params()->fromQuery('authenticate')) {
-            echo __FILE__ . ' Line: ' . __LINE__; var_dump('DO authe'); exit; //XXX
-        }
+        $adapterManager = $this->getServiceLocator()->get('KapSecurity/Authentication/Adapter/AdapterManager');
         
-        //773430982669649
-        //https://www.facebook.com/dialog/oauth?client_id={app-id}&redirect_uri={redirect-uri}
-        return $this->redirect()->toUrl('https://www.facebook.com/dialog/oauth?client_id=773430982669649&redirect_uri=http%3A%2F%2Flocalhost%3A9002%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dtestclient%26redirect_uri%3D%2Foauth%2Freceivecode%26state%3Dxyz%26authenticate%3D1');
+        //http://tools.ietf.org/html/draft-bradley-oauth-jwt-encoded-state-00
+        $github = $adapterManager->get('github');
+        $github->setCallbackUrl($callbackUrl);
+
+        $fb = $adapterManager->get('facebook');
+        $fb->setCallbackUrl($callbackUrl);
+        
+        $requestParams = $this->params()->fromQuery();
 
         $view = new ViewModel([
-            'callbackUrl' => $serverHelper(true)
+            'callbackUrl' => $serverHelper($this->url()->fromRoute('kap-security.oauth-callback', [], [
+                'query' => [
+                    'state' => $this->encodeJwt([
+                        'requestParams' => $requestParams,
+                        'service' => 'facebook_javascript'
+                        ])
+                    ]
+            ])),
+            'authorizationUrls' => [
+                'github' => $github->getAuthenticationUrl($this->encodeJwt([
+                        'requestParams' => $requestParams,
+                        'service' => 'github'
+                    ])),
+                'facebook' => $fb->getAuthenticationUrl($this->encodeJwt([
+                        'requestParams' => $requestParams,
+                        'service' => 'facebook'
+                    ])),
+            ]
         ]);
         
         $view->setTemplate('kap-security/login');
@@ -207,7 +291,7 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
      *
      * @return OAuth2Request
      */
-    protected function getOAuth2Request()
+    protected function getOAuth2Request($params = null)
     {
         $zf2Request = $this->getRequest();
         $headers    = $zf2Request->getHeaders();
@@ -240,7 +324,7 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         $bodyParams = $this->bodyParams() ?: array();
 
         return new OAuth2Request(
-            $zf2Request->getQuery()->toArray(),
+            $params ? $params : $zf2Request->getQuery()->toArray(),
             $this->bodyParams(),
             array(), // attributes
             array(), // cookies
@@ -269,4 +353,15 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         $httpResponse->setContent($response->getResponseBody());
         return $httpResponse;
     }
+
+    protected function encodeJwt($payload) {
+        $jwt = new Jwt();
+        return $jwt->encode($payload, $this->jwtKey);
+    }
+
+    protected function decodeJwt($encoded) {
+        $jwt = new Jwt();
+        return $jwt->decode($encoded, $this->jwtKey);
+    }
+    
 }

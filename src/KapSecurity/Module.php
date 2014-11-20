@@ -5,8 +5,8 @@ use KapApigility\DbEntityRepository;
 use KapSecurity\Authentication\Adapter\CallbackAdapterInterface;
 use KapSecurity\Authentication\AuthenticationService;
 use KapSecurity\Authentication\Options;
-use KapSecurity\V1\Rest\AuthenticationService\AuthenticationServiceEntity;
 use KapSecurity\V1\Rest\IdentityAuthentication\IdentityAuthenticationResource;
+use Zend\Authentication\Storage\NonPersistent;
 use Zend\Db\TableGateway\TableGateway;
 use Zend\Mvc\MvcEvent;
 use Zend\Paginator\Paginator;
@@ -41,54 +41,26 @@ class Module implements ApigilityProviderInterface
     {
         $halEntity = $e->getParam('entity');
         $entity = $halEntity->entity;
-
-        /**
-         * [
-        'name' => 'kap-security.authentication-callback',
-        'params' => [
-        'authentication_service_id' => $entity['id']
-        ]
-        ]
-         */
         
-        if ($entity instanceof AuthenticationServiceEntity) {
-            $adapters = $this->sm->get('KapSecurity\Authentication\Adapter\AdapterManager');
-            $adapter = $adapters->get($entity['system_adapter_service']);
-            
-            $helpers = $this->sm->get('ViewHelperManager');
-            $serverUrl = $helpers->get('ServerUrl');
-            $urlHelper = $helpers->get('Url');
-            
-            $url = $adapter->getRedirectUri();
-            
-            $callbackUrl = $serverUrl($urlHelper('kap-security.authentication-callback', [
-                'authentication_service_id' => $entity['id']
-            ]));
-            $url = str_replace('AUTH_CALLBACK', urlencode($callbackUrl), $url);
-            
-            $halEntity->getLinks()->add(\ZF\Hal\Link\Link::factory(array(
-                'rel' => 'redirect_url',
-                'url' => $url,
-            )));
-        }
+        //TODO
     }
     
     public function onAuthenticationPost(MvcAuthEvent $e)
     {
         /** @var AuthenticationService $authService */
-        $authService = $this->sm->get('KapSecurity\Authentication\AuthenticationService');
+        //$authService = $this->sm->get('KapSecurity\Authentication\AuthenticationService');
 
         //not explicitly authenticated from apigility with known user session identity
-        if($e->getIdentity() instanceof GuestIdentity && $authService->hasIdentity()) {
-            $identityId = $authService->getIdentity();
-            
-            //todo this needs finishing - rbac permissions etc from what I understand rbac works like.
-            $identity = new AuthenticatedIdentity($identityId);
-            $identity->setName('user');
-            
-            //XXX TODO disabled for now
-            //$e->setIdentity($identity);
-        }
+//        if($e->getIdentity() instanceof GuestIdentity && $authService->hasIdentity()) {
+//            $identityId = $authService->getIdentity();
+//            
+//            //todo this needs finishing - rbac permissions etc from what I understand rbac works like.
+//            $identity = new AuthenticatedIdentity($identityId);
+//            $identity->setName('user');
+//            
+//            //XXX TODO disabled for now
+//            //$e->setIdentity($identity);
+//        }
         
     }
     
@@ -110,20 +82,27 @@ class Module implements ApigilityProviderInterface
         ];
     }
 
+    /**
+     * TODO move some to service factories
+     * 
+     * @return array
+     */
     public function getServiceConfig()
     {
         return [
             'aliases' => [
-                'Zend\Authentication\AuthenticationService' => 'KapSecurity\Authentication\AuthenticationService',
+                //for controller/view helpers to work
+                'Zend\Authentication\AuthenticationService' => 'ZF\MvcAuth\Authentication',
+                //'Zend\Authentication\AuthenticationService' => 'KapSecurity\Authentication\AuthenticationService',
                 //'ZF\OAuth2\Adapter\PdoAdapter' => 'KapSecurity\OAuth2\PdoAdapter'
             ],
-            'factories' => [
+            'factories' => array(
                 //'KapSecurity\OAuth2\PdoAdapter' => 'KapSecurity\OAuth2\PdoAdapter',
                 'KapSecurity\OAuth2\PdoAdapter' => function($services) {
                         $config = $services->get('Config');
 
                         if (!isset($config['zf-oauth2']['db']) || empty($config['zf-oauth2']['db'])) {
-                            throw new Exception\RuntimeException(
+                            throw new \RuntimeException(
                                 'The database configuration [\'zf-oauth2\'][\'db\'] for OAuth2 is missing'
                             );
                         }
@@ -148,13 +127,14 @@ class Module implements ApigilityProviderInterface
                 'KapSecurity\Authentication\AuthenticationService' => function($sm) {
                         $config = $sm->get('Config');
                         $options = empty($config['authentication_options']) ? [] : $config['authentication_options']; 
-                        return new AuthenticationService(
+                        $ins = new AuthenticationService(
                             new Options($options),
                             $sm->get('KapSecurity\\IdentityAuthenticationRepository'),
                             $sm->get('KapSecurity\\IdentityRepository'),
-                            $sm->get('KapSecurity\\AuthenticationServiceRepository'),
                             $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
                         );
+                        $ins->setStorage(new NonPersistent());
+                        return $ins;
                     },
                 'KapSecurity\\IdentityRepository' => function($sm) {
                         $ins = new IdentityRepository(
@@ -180,19 +160,7 @@ class Module implements ApigilityProviderInterface
                         );
                         return $ins;
                     },
-                'KapSecurity\\AuthenticationServiceRepository' => function($sm) {
-                        $ins = new AuthenticationServiceRepository(
-                            $sm->get('KapSecurity\V1\Rest\AuthenticationService\AuthenticationServiceResource\Table')
-                        );
-                        return $ins;
-                    },
-                "KapSecurity\\V1\\Rest\\AuthenticationService\\AuthenticationServiceResource" => function($sm) {
-                        $ins = new \KapApigility\EntityRepositoryResource(
-                            $sm->get('KapSecurity\\AuthenticationServiceRepository')
-                        );
-                        return $ins;
-                    }
-            ]
+            )
         ];
     }
     

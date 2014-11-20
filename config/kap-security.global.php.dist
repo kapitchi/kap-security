@@ -11,8 +11,12 @@ return [
         'allow_registration' => true,
         'enable_on_registration' => true
     ],
-    'zf-oauth2' => array(
-        'allow_implicit' => true,
-        'storage' => 'KapSecurity\\OAuth2\PdoAdapter'
-    ),
+    'zf-oauth2' => [
+        'storage' => 'KapSecurity\\OAuth2\PdoAdapter',
+        'allow_implicit' => false,
+        'options' => [
+            'always_issue_new_refresh_token' => false,
+            'refresh_token_lifetime' => 1209600,//14 days
+        ]
+    ],
 ];
