@@ -17,16 +17,6 @@ return array(
                     ),
                 ),
             ),
-            'kap-security.login' => array(
-                'type' => 'Segment',
-                'options' => array(
-                    'route' => '/login',
-                    'defaults' => array(
-                        'controller' => 'KapSecurity\\Controller\\LoginController',
-                        'action' => 'login',
-                    ),
-                ),
-            ),
             'kap-security.rest.identity-authentication' => array(
                 'type' => 'Segment',
                 'options' => array(
@@ -45,23 +35,12 @@ return array(
                     ),
                 ),
             ),
-            'kap-security.rpc.logout' => array(
-                'type' => 'Segment',
-                'options' => array(
-                    'route' => '/logout',
-                    'defaults' => array(
-                        'controller' => 'KapSecurity\\V1\\Rpc\\Logout\\Controller',
-                        'action' => 'logout',
-                    ),
-                ),
-            ),
         ),
     ),
     'zf-versioning' => array(
         'uri' => array(
             3 => 'kap-security.rest.identity-authentication',
             4 => 'kap-security.rest.identity',
-            5 => 'kap-security.rpc.logout',
         ),
     ),
     'zf-rest' => array(
@@ -114,7 +93,6 @@ return array(
         'controllers' => array(
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => 'HalJson',
             'KapSecurity\\V1\\Rest\\Identity\\Controller' => 'HalJson',
-            'KapSecurity\\V1\\Rpc\\Logout\\Controller' => 'Json',
         ),
         'accept_whitelist' => array(
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
@@ -127,11 +105,6 @@ return array(
                 1 => 'application/hal+json',
                 2 => 'application/json',
             ),
-            'KapSecurity\\V1\\Rpc\\Logout\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-                2 => 'application/*+json',
-            ),
         ),
         'content_type_whitelist' => array(
             'KapSecurity\\V1\\Rest\\IdentityAuthentication\\Controller' => array(
@@ -139,10 +112,6 @@ return array(
                 1 => 'application/json',
             ),
             'KapSecurity\\V1\\Rest\\Identity\\Controller' => array(
-                0 => 'application/vnd.kap-security.v1+json',
-                1 => 'application/json',
-            ),
-            'KapSecurity\\V1\\Rpc\\Logout\\Controller' => array(
                 0 => 'application/vnd.kap-security.v1+json',
                 1 => 'application/json',
             ),
@@ -195,19 +164,9 @@ return array(
         ),
     ),
     'controllers' => array(
-        'factories' => array(
-            'KapSecurity\\V1\\Rpc\\Logout\\Controller' => 'KapSecurity\\V1\\Rpc\\Logout\\LogoutControllerFactory',
-        ),
+        'factories' => array(),
     ),
-    'zf-rpc' => array(
-        'KapSecurity\\V1\\Rpc\\Logout\\Controller' => array(
-            'service_name' => 'logout',
-            'http_methods' => array(
-                0 => 'POST',
-            ),
-            'route_name' => 'kap-security.rpc.logout',
-        ),
-    ),
+    'zf-rpc' => array(),
     'service_manager' => array(
         'factories' => array(),
     ),

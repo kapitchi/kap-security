@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: zemi
- * Date: 12/05/14
- * Time: 19:34
- */
 
 namespace KapSecurity\Authentication;
-
 
 class Result extends \Zend\Authentication\Result {
     /**

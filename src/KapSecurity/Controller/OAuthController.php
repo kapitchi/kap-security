@@ -1,8 +1,4 @@
 <?php
-/**
- * @license   http://opensource.org/licenses/BSD-3-Clause BSD-3-Clause
- * @copyright Copyright (c) 2014 Zend Technologies USA Inc. (http://www.zend.com)
- */
 
 namespace KapSecurity\Controller;
 
@@ -143,9 +139,7 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
 
         $result = $authService->authenticate($adapter);
         if(!$result->isValid()) {
-
-            echo __FILE__ . ' Line: ' . __LINE__; var_dump($result); exit; //XXX
-
+            $response = new OAuth2Response();
             $redirectUri = $requestParams['redirect_uri'];
             if($redirectUri) {
                 $response->setRedirect(302, $redirectUri, $requestParams['state'], 'authentication_failed', "User didn't authenticate", null);

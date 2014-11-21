@@ -33,7 +33,7 @@ class Module implements ApigilityProviderInterface
     {
         $helpers = $this->sm->get('ViewHelperManager');
         $hal = $helpers->get('hal');
-
+        
         $hal->getEventManager()->attach(['renderEntity'], array($this, 'onRenderEntity'));
     }
     
@@ -47,21 +47,7 @@ class Module implements ApigilityProviderInterface
     
     public function onAuthenticationPost(MvcAuthEvent $e)
     {
-        /** @var AuthenticationService $authService */
-        //$authService = $this->sm->get('KapSecurity\Authentication\AuthenticationService');
-
-        //not explicitly authenticated from apigility with known user session identity
-//        if($e->getIdentity() instanceof GuestIdentity && $authService->hasIdentity()) {
-//            $identityId = $authService->getIdentity();
-//            
-//            //todo this needs finishing - rbac permissions etc from what I understand rbac works like.
-//            $identity = new AuthenticatedIdentity($identityId);
-//            $identity->setName('user');
-//            
-//            //XXX TODO disabled for now
-//            //$e->setIdentity($identity);
-//        }
-        
+        //TODO
     }
     
     public function getControllerConfig()
@@ -71,7 +57,6 @@ class Module implements ApigilityProviderInterface
                 'ZF\OAuth2\Controller\Auth' => 'KapSecurity\Controller\OAuthController'
             ],
             'factories' => [
-                'KapSecurity\\Controller\\LoginController' => 'KapSecurity\\Controller\\LoginControllerFactory',
                 'KapSecurity\Controller\OAuthController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
                         $sm = $cm->getServiceLocator();
                         $server = $sm->get('ZF\OAuth2\Service\OAuth2Server');
