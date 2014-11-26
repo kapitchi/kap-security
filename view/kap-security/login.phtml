@@ -1,4 +1,15 @@
 <?php
+$authenticationAdapterManager = $this->authenticationAdapterManager();
+
+$url = $authenticationAdapterManager->getCallbackUrl('facebook_javascript', [
+    'requestParams' => $requestParams,
+]);
+
+$url = $authenticationAdapterManager->getCallbackUrl('github', [
+    'requestParams' => $requestParams,
+]);
+
+echo __FILE__ . ' Line: ' . __LINE__; var_dump($url); exit; //XXX
 ?>
 <h1>Demo login page</h1>
 

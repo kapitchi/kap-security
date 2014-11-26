@@ -15,12 +15,12 @@ class OAuth2 implements AdapterInterface, RedirectionAdapterInterface {
     /**
      * @var \League\OAuth2\Client\Provider\AbstractProvider
      */
-    protected $service;
+    protected $provider;
     
-    public function __construct($authenticationService, AbstractProvider $service)
+    public function __construct($authenticationService, AbstractProvider $provider)
     {
         $this->authenticationService = $authenticationService;
-        $this->service = $service;
+        $this->provider = $provider;
     }
     
     /**
@@ -42,10 +42,10 @@ class OAuth2 implements AdapterInterface, RedirectionAdapterInterface {
         }
         
         try {
-            $service = $this->getService();
-            $token = $service->getAccessToken('authorization_code', ['code' => $code]);
+            $provider = $this->getProvider();
+            $token = $provider->getAccessToken('authorization_code', ['code' => $code]);
             
-            $userProfile = $service->getUserDetails($token);
+            $userProfile = $provider->getUserDetails($token);
             
             $res = new OAuth2Result(
                 $this->authenticationService,
@@ -94,7 +94,7 @@ class OAuth2 implements AdapterInterface, RedirectionAdapterInterface {
 
     public function getAuthenticationUrl($state)
     {
-        return (string)$this->getService()->getAuthorizationUrl([
+        return (string)$this->getProvider()->getAuthorizationUrl([
             'state' => $state
         ]);
     }
@@ -104,23 +104,23 @@ class OAuth2 implements AdapterInterface, RedirectionAdapterInterface {
      */
     public function setCallbackUrl($callbackUri)
     {
-        $this->getService()->redirectUri = $callbackUri;
+        $this->getProvider()->redirectUri = $callbackUri;
     }
 
     /**
-     * @param AbstractProvider $service
+     * @param AbstractProvider $provider
      */
-    public function setService(AbstractProvider $service)
+    public function setProvider(AbstractProvider $provider)
     {
-        $this->service = $service;
+        $this->provider = $provider;
     }
 
     /**
      * @return AbstractProvider
      */
-    public function getService()
+    public function getProvider()
     {
-        return $this->service;
+        return $this->provider;
     }
 
     /**

@@ -9,34 +9,35 @@
 namespace KapSecurity\Authentication\Adapter;
 
 
+use KapSecurity\Authentication\Options;
 use Zend\Mvc\Exception\InvalidPluginException;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\AbstractPluginManager;
 use Zend\ServiceManager\Config;
 use Zend\ServiceManager\Exception;
-use Zend\ServiceManager\FactoryInterface;
+use Zend\ServiceManager\InitializerInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
-class AdapterManager extends AbstractPluginManager implements FactoryInterface {
+class AdapterManager extends AbstractPluginManager implements InitializerInterface {
     
-    /**
-     * Create service
-     *
-     * @param ServiceLocatorInterface $serviceLocator
-     * @return mixed
-     */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    protected $options;
+    
+    public function __construct(Config $config, Options $options) {
+        parent::__construct($config);
+        
+        $this->options = $options;
+        
+        $this->addInitializer($this);
+    }
+
+    public function initialize($instance, ServiceLocatorInterface $serviceLocator)
     {
-        $config = $serviceLocator->get('Config');
-        
-        $managerConfig = [];
-        if(!empty($config['authentication_adapter_manager']) && !empty($config['authentication_adapter_manager']['adapters'])) {
-            $managerConfig = $config['authentication_adapter_manager']['adapters'];
+        if($instance instanceof RedirectionAdapterInterface) {
+            if(!$this->options->getCallbackUrl()) {
+                throw new \RuntimeException("Callback url is not set on authentication options");
+            }
+            $instance->setCallbackUrl($this->options->getCallbackUrl());
         }
-        
-        $ins = new self(new Config($managerConfig));
-        $ins->setServiceLocator($serviceLocator);
-        return $ins;
     }
     
     /**
@@ -62,16 +63,4 @@ class AdapterManager extends AbstractPluginManager implements FactoryInterface {
         ));
     }
 
-    public function get($name, $options = array(), $usePeeringServiceManagers = true)
-    {
-        $ins = parent::get($name, $options, $usePeeringServiceManagers);
-
-        //$ins->setId($this->canonicalizeName($name));
-
-//        if(method_exists($ins, 'setMvcEvent')) {
-//            $ins->setMvcEvent($this->getMvcEvent());
-//        }
-
-        return $ins;
-    }
 } 

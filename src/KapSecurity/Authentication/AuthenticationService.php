@@ -10,6 +10,7 @@ use KapSecurity\V1\Rest\IdentityAuthentication\IdentityAuthenticationResource;
 use Zend\Authentication\Exception;
 use Zend\Mvc\MvcEvent;
 use ZF\Rest\AbstractResourceListener;
+use OAuth2\Encryption\Jwt;
 
 class AuthenticationService extends \Zend\Authentication\AuthenticationService {
     
@@ -95,6 +96,26 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
         }
         
         return $result;
+    }
+
+    public function encodeJwt($payload) {
+        $jwt = new Jwt();
+        return $jwt->encode($payload, $this->getJwtKey());
+    }
+
+    public function decodeJwt($encoded) {
+        $jwt = new Jwt();
+        return $jwt->decode($encoded, $this->getJwtKey());
+    }
+    
+    private function getJwtKey()
+    {
+        $key = $this->options->getJwtKey();
+        if(empty($key)) {
+            throw new \RuntimeException("No JWT key specified in options \$config['authentication_options']['jwt_key']");
+        }
+        
+        return $key;
     }
     
 } 

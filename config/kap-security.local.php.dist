@@ -1,3 +1,6 @@
 <?php
-return array(
-);
+return [
+    'authentication' => [
+        'jwt_key' => 'mykey',
+    ],
+];

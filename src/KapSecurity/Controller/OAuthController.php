@@ -2,7 +2,9 @@
 
 namespace KapSecurity\Controller;
 
+use KapSecurity\Authentication\Adapter\AdapterManager;
 use KapSecurity\Authentication\Adapter\RedirectionAdapterInterface;
+use KapSecurity\Authentication\AuthenticationService;
 use OAuth2\Encryption\Jwt;
 use OAuth2\Request as OAuth2Request;
 use OAuth2\Response as OAuth2Response;
@@ -21,19 +23,20 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
     protected $server;
 
     /**
-     * TODO this must go from config
-     * @var string 
+     * @var AuthenticationService
      */
-    protected $jwtKey = '12345';
+    protected $authenticationService;
 
     /**
-     * Constructor
-     *
-     * @param $server OAuth2Server
+     * @var \KapSecurity\Authentication\Adapter\AdapterManager
      */
-    public function __construct(OAuth2Server $server)
+    protected $adapterManager;
+
+    public function __construct(OAuth2Server $server, AuthenticationService $authenticationService, AdapterManager $adapterManager)
     {
         $this->server = $server;
+        $this->authenticationService = $authenticationService;
+        $this->adapterManager = $adapterManager;
     }
 
     /**
@@ -107,36 +110,21 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         $request  = $this->getOAuth2Request();
         return $this->authorize($request);
     }
-
+    
     public function callbackAction()
     {
-        $authService = $this->getServiceLocator()->get('KapSecurity\\Authentication\\AuthenticationService');
+        $authService = $this->getAuthenticationService();
 
-        $state = $this->decodeJwt($this->params()->fromQuery('state'));
+        $state = $authService->decodeJwt($this->params()->fromQuery('state'));
         if(!$state) {
-            echo __FILE__ . ' Line: ' . __LINE__; var_dump('state === false'); exit; //XXX
+            throw new \InvalidArgumentException("Can't decode state from jwt token");
         }
 
         //authenticate if requested
         $service = $state['service'];
         $requestParams = $state['requestParams'];
 
-        $adapterManager = $this->getServiceLocator()->get('KapSecurity/Authentication/Adapter/AdapterManager');
-        $adapter = $adapterManager->get($service);
-
-        if($adapter instanceof RedirectionAdapterInterface) {
-            $view = $this->getServiceLocator()->get('ViewHelperManager');
-            $serverHelper = $view->get('ServerUrl');
-    
-            $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
-            $adapter->setCallbackUrl($callbackUrl);
-        }
-
-        //TODO XXX
-        if(method_exists($adapter, 'setMvcEvent')) {
-            $adapter->setMvcEvent($this->getEvent());
-        }
-
+        $adapter = $this->getAdapter($service);
         $result = $authService->authenticate($adapter);
         if(!$result->isValid()) {
             $response = new OAuth2Response();
@@ -153,6 +141,26 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
 
         $request = $this->getOAuth2Request($state['requestParams']);
         return $this->authorize($request);
+    }
+
+    protected function getAdapter($name)
+    {
+        $adapterManager = $this->getAdapterManager();
+        $adapter = $adapterManager->get($name);
+
+        if($adapter instanceof RedirectionAdapterInterface) {
+            $view = $this->getServiceLocator()->get('ViewHelperManager');
+            $serverHelper = $view->get('ServerUrl');
+
+            $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
+            $adapter->setCallbackUrl($callbackUrl);
+        }
+
+        if(method_exists($adapter, 'setMvcEvent')) {
+            $adapter->setMvcEvent($this->getEvent());
+        }
+
+
     }
 
     protected function authorize(OAuth2Request $request)
@@ -193,41 +201,9 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
 
     protected function handleNoIdentity()
     {
-        $view = $this->getServiceLocator()->get('ViewHelperManager');
-        $serverHelper = $view->get('ServerUrl');
-
-        $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
-        
-        $adapterManager = $this->getServiceLocator()->get('KapSecurity/Authentication/Adapter/AdapterManager');
-        
-        //http://tools.ietf.org/html/draft-bradley-oauth-jwt-encoded-state-00
-        $github = $adapterManager->get('github');
-        $github->setCallbackUrl($callbackUrl);
-
-        $fb = $adapterManager->get('facebook');
-        $fb->setCallbackUrl($callbackUrl);
-        
         $requestParams = $this->params()->fromQuery();
-
         $view = new ViewModel([
-            'callbackUrl' => $serverHelper($this->url()->fromRoute('kap-security.oauth-callback', [], [
-                'query' => [
-                    'state' => $this->encodeJwt([
-                        'requestParams' => $requestParams,
-                        'service' => 'facebook_javascript'
-                        ])
-                    ]
-            ])),
-            'authorizationUrls' => [
-                'github' => $github->getAuthenticationUrl($this->encodeJwt([
-                        'requestParams' => $requestParams,
-                        'service' => 'github'
-                    ])),
-                'facebook' => $fb->getAuthenticationUrl($this->encodeJwt([
-                        'requestParams' => $requestParams,
-                        'service' => 'facebook'
-                    ])),
-            ]
+            'requestParams' => $requestParams,
         ]);
         
         $view->setTemplate('kap-security/login');
@@ -348,14 +324,36 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         return $httpResponse;
     }
 
-    protected function encodeJwt($payload) {
-        $jwt = new Jwt();
-        return $jwt->encode($payload, $this->jwtKey);
+    /**
+     * @param \KapSecurity\Authentication\AuthenticationService $authenticationService
+     */
+    public function setAuthenticationService($authenticationService)
+    {
+        $this->authenticationService = $authenticationService;
     }
 
-    protected function decodeJwt($encoded) {
-        $jwt = new Jwt();
-        return $jwt->decode($encoded, $this->jwtKey);
+    /**
+     * @return \KapSecurity\Authentication\AuthenticationService
+     */
+    public function getAuthenticationService()
+    {
+        return $this->authenticationService;
+    }
+
+    /**
+     * @param \KapSecurity\Authentication\Adapter\AdapterManager $adapterManager
+     */
+    public function setAdapterManager($adapterManager)
+    {
+        $this->adapterManager = $adapterManager;
+    }
+
+    /**
+     * @return \KapSecurity\Authentication\Adapter\AdapterManager
+     */
+    public function getAdapterManager()
+    {
+        return $this->adapterManager;
     }
     
 }

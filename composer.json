@@ -19,7 +19,7 @@
     "require": {
         "zfcampus/zf-apigility": "~1.0",
         "kapitchi/kap-apigility": "~0.1",
-        "league/oauth2-client": "~0.3",
+        "league/oauth2-client": "dev-master#16fa21c0fb01bbfd3d44a771f3730ea02337d9db",
         "facebook/php-sdk-v4" : "4.0.*"
     },
     "require-dev": {

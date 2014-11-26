@@ -18,6 +18,10 @@ class FacebookJavascript implements AdapterInterface {
     
     public function __construct(array $options)
     {
+        if(empty($options['clientId']) || empty($options['clientSecret'])) {
+            throw new \InvalidArgumentException("\$options['clientId'] and \$options['clientSecret'] need to be set");
+        }
+        
         \Facebook\FacebookSession::setDefaultApplication($options['clientId'], $options['clientSecret']);
         $this->service = new \Facebook\FacebookJavaScriptLoginHelper();
     }

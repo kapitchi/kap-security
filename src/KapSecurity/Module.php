@@ -2,20 +2,24 @@
 namespace KapSecurity;
 
 use KapApigility\DbEntityRepository;
+use KapSecurity\Authentication\Adapter\AdapterManager;
 use KapSecurity\Authentication\Adapter\CallbackAdapterInterface;
 use KapSecurity\Authentication\AuthenticationService;
 use KapSecurity\Authentication\Options;
 use KapSecurity\V1\Rest\IdentityAuthentication\IdentityAuthenticationResource;
+use KapSecurity\View\Helper\AuthenticationAdapter;
 use Zend\Authentication\Storage\NonPersistent;
 use Zend\Db\TableGateway\TableGateway;
+use Zend\ModuleManager\Feature\ViewHelperProviderInterface;
 use Zend\Mvc\MvcEvent;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\Config;
 use ZF\Apigility\Provider\ApigilityProviderInterface;
 use ZF\MvcAuth\Identity\AuthenticatedIdentity;
 use ZF\MvcAuth\Identity\GuestIdentity;
 use ZF\MvcAuth\MvcAuthEvent;
 
-class Module implements ApigilityProviderInterface
+class Module implements ApigilityProviderInterface, ViewHelperProviderInterface
 {
     protected $sm;
     
@@ -59,8 +63,33 @@ class Module implements ApigilityProviderInterface
             'factories' => [
                 'KapSecurity\Controller\OAuthController' => function(\Zend\Mvc\Controller\ControllerManager $cm) {
                         $sm = $cm->getServiceLocator();
-                        $server = $sm->get('ZF\OAuth2\Service\OAuth2Server');
-                        $ins = new Controller\OAuthController($server);
+                        $ins = new Controller\OAuthController(
+                            $sm->get('ZF\OAuth2\Service\OAuth2Server'),
+                            $sm->get('KapSecurity\Authentication\AuthenticationService'),
+                            $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
+                        );
+                        return $ins;
+                    }
+            ]
+        ];
+    }
+
+    /**
+     * Expected to return \Zend\ServiceManager\Config object or array to
+     * seed such an object.
+     *
+     * @return array|\Zend\ServiceManager\Config
+     */
+    public function getViewHelperConfig()
+    {
+        return [
+            'factories' => [
+                'authenticationAdapterManager' => function($sm) {
+                        $ins = new AuthenticationAdapter(
+                            $sm->getServiceLocator()->get('KapSecurity\Authentication\Adapter\AdapterManager'),
+                            $sm->getServiceLocator()->get('KapSecurity\Authentication\AuthenticationService')
+                        );
+                        
                         return $ins;
                     }
             ]
@@ -108,18 +137,31 @@ class Module implements ApigilityProviderInterface
                             'options'  => $options,
                         ), $oauth2ServerConfig);
                     },
-                'KapSecurity\Authentication\Adapter\AdapterManager' => 'KapSecurity\Authentication\Adapter\AdapterManager',
-                'KapSecurity\Authentication\AuthenticationService' => function($sm) {
+                'KapSecurity\Authentication\Adapter\AdapterManager' => function($sm) {
                         $config = $sm->get('Config');
-                        $options = empty($config['authentication_options']) ? [] : $config['authentication_options']; 
+
+                        $managerConfig = [];
+                        if(!empty($config['authentication_adapter_manager']) && !empty($config['authentication_adapter_manager']['adapters'])) {
+                            $managerConfig = $config['authentication_adapter_manager']['adapters'];
+                        }
+
+                        $ins = new AdapterManager(new Config($managerConfig), $sm->get('KapSecurity\Authentication\Options'));
+                        return $ins;
+                    },
+                'KapSecurity\Authentication\AuthenticationService' => function($sm) {
                         $ins = new AuthenticationService(
-                            new Options($options),
+                            $sm->get('KapSecurity\Authentication\Options'),
                             $sm->get('KapSecurity\\IdentityAuthenticationRepository'),
                             $sm->get('KapSecurity\\IdentityRepository'),
                             $sm->get('KapSecurity\Authentication\Adapter\AdapterManager')
                         );
                         $ins->setStorage(new NonPersistent());
                         return $ins;
+                    },
+                'KapSecurity\Authentication\Options' => function($sm) {
+                        $config = $sm->get('Config');
+                        $options = empty($config['authentication']) ? [] : $config['authentication'];
+                        return new Options($options);
                     },
                 'KapSecurity\\IdentityRepository' => function($sm) {
                         $ins = new IdentityRepository(
@@ -164,4 +206,5 @@ class Module implements ApigilityProviderInterface
             ),
         );
     }
+    
 }

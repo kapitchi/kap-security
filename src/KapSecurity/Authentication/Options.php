@@ -14,6 +14,8 @@ use Zend\Stdlib\AbstractOptions;
 class Options extends AbstractOptions {
     protected $allowRegistration = false;
     protected $enableOnRegistration = true;
+    protected $jwtKey = null;
+    protected $callbackUrl = null;//e.g. http://example.com/oauth/callback
 
     /**
      * @param boolean $allowRegistration
@@ -46,5 +48,36 @@ class Options extends AbstractOptions {
     {
         return $this->enableOnRegistration;
     }
-    
+
+    /**
+     * @param string $jwtKey
+     */
+    public function setJwtKey($jwtKey)
+    {
+        $this->jwtKey = $jwtKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getJwtKey()
+    {
+        return $this->jwtKey;
+    }
+
+    /**
+     * @param string $callbackUrl
+     */
+    public function setCallbackUrl($callbackUrl)
+    {
+        $this->callbackUrl = $callbackUrl;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCallbackUrl()
+    {
+        return $this->callbackUrl;
+    }
 }
