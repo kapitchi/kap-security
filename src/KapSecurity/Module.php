@@ -51,6 +51,7 @@ class Module implements ApigilityProviderInterface, ViewHelperProviderInterface
     
     public function onAuthenticationPost(MvcAuthEvent $e)
     {
+        //echo __FILE__ . ' Line: ' . __LINE__; var_dump($e); exit; //XXX
         //TODO
     }
     

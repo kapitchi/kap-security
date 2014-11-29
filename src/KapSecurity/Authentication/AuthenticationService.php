@@ -72,7 +72,7 @@ class AuthenticationService extends \Zend\Authentication\AuthenticationService {
                 $profile = $result->getUserProfile();
                 if($profile) {
                     $idData['display_name'] = $profile['displayName'];
-                    $data['user_profile_json'] = json_encode((array)$profile);
+                    $data['user_profile_json'] = json_encode($profile->getArrayCopy());
                 }
                 
                 $identityEntity = $this->identityRepository->create($idData);

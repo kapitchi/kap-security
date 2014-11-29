@@ -26,17 +26,20 @@ class AuthenticationAdapter extends AbstractHelper
     
     public function getCallbackUrl($service, array $queryParams)
     {
-        $queryParams['service'] = $service;
+        $params = [
+            'service' => $service,
+            'requestParams' => $queryParams
+        ];
         
         $adapter = $this->adapterManager->get($service);
         if($adapter instanceof RedirectionAdapterInterface) {
-            return $adapter->getAuthenticationUrl($this->authenticationService->encodeJwt($queryParams));
+            return $adapter->getAuthenticationUrl($this->authenticationService->encodeJwt($params));
         }
         
         $serverHelper = $this->getView()->plugin('serverUrl');
         return $serverHelper($this->getView()->url('kap-security.oauth-callback', [], [
             'query' => [
-                'state' => $this->authenticationService->encodeJwt($queryParams)
+                'state' => $this->authenticationService->encodeJwt($params)
             ]
         ]));
     }

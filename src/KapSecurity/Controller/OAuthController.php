@@ -120,7 +120,9 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
             throw new \InvalidArgumentException("Can't decode state from jwt token");
         }
 
-        //authenticate if requested
+        //TODO check params
+        //if(empty($state['service']) || empty($state['requestParams']) || empty($state['service']))
+
         $service = $state['service'];
         $requestParams = $state['requestParams'];
 
@@ -130,10 +132,10 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
             $response = new OAuth2Response();
             $redirectUri = $requestParams['redirect_uri'];
             if($redirectUri) {
-                $response->setRedirect(302, $redirectUri, $requestParams['state'], 'authentication_failed', "User didn't authenticate", null);
+                $response->setRedirect(302, $redirectUri, $requestParams['state'], 'authentication_failed', current($result->getMessages()), null);
             }
             else {
-                $response->setError(400, 'authentication_failed', "User didn't authenticate");
+                $response->setError(400, 'authentication_failed', current($result->getMessages()));
             }
 
             return $this->handleResponse($response);
@@ -148,26 +150,18 @@ class OAuthController extends \ZF\OAuth2\Controller\AuthController
         $adapterManager = $this->getAdapterManager();
         $adapter = $adapterManager->get($name);
 
-        if($adapter instanceof RedirectionAdapterInterface) {
-            $view = $this->getServiceLocator()->get('ViewHelperManager');
-            $serverHelper = $view->get('ServerUrl');
-
-            $callbackUrl = $serverHelper($this->url()->fromRoute('kap-security.oauth-callback'));
-            $adapter->setCallbackUrl($callbackUrl);
-        }
-
         if(method_exists($adapter, 'setMvcEvent')) {
             $adapter->setMvcEvent($this->getEvent());
         }
 
-
+        return $adapter;
     }
 
     protected function authorize(OAuth2Request $request)
     {
         $response = new OAuth2Response();
 
-        $authService = $this->getServiceLocator()->get('KapSecurity\\Authentication\\AuthenticationService');
+        $authService = $this->getAuthenticationService();
 
         // validate the authorize request
         if (!$this->server->validateAuthorizeRequest($request, $response)) {
